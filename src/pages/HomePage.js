@@ -1,54 +1,66 @@
-import React, { useState, useEffect } from "react";
-import { ClipLoader } from "react-spinners";
-import { useNavigate } from "react-router-dom";
-import PaginationBar from "../components/PaginationBar";
-import SearchForm from "../components/SearchForm";
-import api from "../apiService";
-import { FormProvider } from "../form";
-import { useForm } from "react-hook-form";
-import { Container, Alert, Box, Card, Stack, CardMedia, CardActionArea, Typography, CardContent } from "@mui/material";
-
-
+import React, { useState, useEffect } from 'react';
+import { ClipLoader } from 'react-spinners';
+import { useNavigate } from 'react-router-dom';
+import PaginationBar from '../components/PaginationBar';
+import SearchForm from '../components/SearchForm';
+import api from '../apiService';
+import { FormProvider } from '../form';
+import { useForm } from 'react-hook-form';
+import {
+  Container,
+  Alert,
+  Box,
+  Card,
+  Stack,
+  CardMedia,
+  CardActionArea,
+  Typography,
+  CardContent,
+} from '@mui/material';
+import { useSelector, useDispatch } from 'react-redux';
+import {
+  fetchBooksFailure,
+  fetchBooksStart,
+  fetchBooksSuccess,
+} from '../features/books/bookSlice';
 
 const BACKEND_API = process.env.REACT_APP_BACKEND_API;
 
 const HomePage = () => {
-  const [books, setBooks] = useState([]);
   const [pageNum, setPageNum] = useState(1);
   const totalPage = 10;
   const limit = 10;
 
-  const [loading, setLoading] = useState(false);
-  const [query, setQuery] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
+  const [query, setQuery] = useState('');
 
-  const navigate = useNavigate()
+  const { books, loading, error } = useSelector((state) => state.books);
+  const dispatch = useDispatch();
+
+  const navigate = useNavigate();
   const handleClickBook = (bookId) => {
     navigate(`/books/${bookId}`);
   };
 
-
-
-
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
+      dispatch(fetchBooksStart());
       try {
         let url = `/books?_page=${pageNum}&_limit=${limit}`;
         if (query) url += `&q=${query}`;
+        console.log(url);
         const res = await api.get(url);
-        setBooks(res.data);
-        setErrorMessage("");
+        console.log(res.data);
+        dispatch(fetchBooksSuccess(res.data));
       } catch (error) {
-        setErrorMessage(error.message);
+        dispatch(fetchBooksFailure(error.message));
+        console.log(error);
       }
-      setLoading(false);
     };
     fetchData();
-  }, [pageNum, limit, query]);
+  }, [pageNum, limit, query, dispatch]);
   //--------------form
   const defaultValues = {
-    searchQuery: ""
+    searchQuery: '',
   };
   const methods = useForm({
     defaultValues,
@@ -59,14 +71,16 @@ const HomePage = () => {
   };
   return (
     <Container>
-      <Stack sx={{ display: "flex", alignItems: "center", m: "2rem" }}>
-        <Typography variant="h3" sx={{ textAlign: "center" }}>Book Store</Typography>
-        {errorMessage && <Alert severity="danger">{errorMessage}</Alert>}
+      <Stack sx={{ display: 'flex', alignItems: 'center', m: '2rem' }}>
+        <Typography variant="h3" sx={{ textAlign: 'center' }}>
+          Book Store
+        </Typography>
+        {error && <Alert severity="danger">{error}</Alert>}
         <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
           <Stack
             spacing={2}
-            direction={{ xs: "column", sm: "row" }}
-            alignItems={{ sm: "center" }}
+            direction={{ xs: 'column', sm: 'row' }}
+            alignItems={{ sm: 'center' }}
             justifyContent="space-between"
             mb={2}
           >
@@ -81,19 +95,26 @@ const HomePage = () => {
       </Stack>
       <div>
         {loading ? (
-          <Box sx={{ textAlign: "center", color: "primary.main" }} >
+          <Box sx={{ textAlign: 'center', color: 'primary.main' }}>
             <ClipLoader color="inherit" size={150} loading={true} />
           </Box>
         ) : (
-          <Stack direction="row" spacing={2} justifyContent="space-around" flexWrap="wrap">
+          <Stack
+            direction="row"
+            spacing={2}
+            justifyContent="space-around"
+            flexWrap="wrap"
+          >
             {books.map((book) => (
               <Card
-                key={book.id} onClick={() => handleClickBook(book.id)}
+                key={book.id}
+                onClick={() => handleClickBook(book.id)}
                 sx={{
-                  width: "12rem",
-                  height: "27rem",
-                  marginBottom: "2rem",
-                }}>
+                  width: '12rem',
+                  height: '27rem',
+                  marginBottom: '2rem',
+                }}
+              >
                 <CardActionArea>
                   <CardMedia
                     component="img"
@@ -104,7 +125,6 @@ const HomePage = () => {
                     <Typography gutterBottom variant="h5" component="div">
                       {`${book.title}`}
                     </Typography>
-
                   </CardContent>
                 </CardActionArea>
               </Card>
